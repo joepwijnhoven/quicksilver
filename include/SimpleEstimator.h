@@ -11,6 +11,8 @@
 class SimpleEstimator : public Estimator {
 
     std::shared_ptr<SimpleGraph> graph;
+    int nr_edges_in[];
+    int nr_edges_out[];
 
 public:
     explicit SimpleEstimator(std::shared_ptr<SimpleGraph> &g);
