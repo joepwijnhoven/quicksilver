@@ -21,7 +21,6 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
 
     // perform your estimation here
-
     while (q->isConcat() == 1) {
         q = q->left;
     }
