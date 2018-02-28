@@ -1,3 +1,5 @@
 /cmake-build-debug
 /cmake-build-release
 /.idea
+queries.csv
+testSet20KCont.nt

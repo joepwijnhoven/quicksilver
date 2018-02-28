@@ -7,12 +7,15 @@
 
 #include "Estimator.h"
 #include "SimpleGraph.h"
+#include <vector>
 
 class SimpleEstimator : public Estimator {
 
     std::shared_ptr<SimpleGraph> graph;
-    int nr_edges_in[];
-    int nr_edges_out[];
+    std::vector<uint32_t> nr_edges_in;
+    std::vector<uint32_t> nr_edges_out;
+    std::vector<uint32_t> nr_label_occurences;
+
 
 public:
     explicit SimpleEstimator(std::shared_ptr<SimpleGraph> &g);
