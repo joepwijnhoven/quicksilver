@@ -21,5 +21,5 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
     // perform your estimation here
 
-    return cardStat {0, 0, 0};
+    return cardStat {1, 1, 1};
 }
