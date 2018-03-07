@@ -15,6 +15,9 @@ SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
     nr_edges_out.resize(graph.get()->getNoVertices());
     nr_label_occurences.resize(graph.get()->getNoLabels());
     array.resize(graph.get()->getNoLabels());
+    tabels.resize(graph.get()->getNoLabels());
+    uniqueIN.resize(graph.get()->getNoLabels());
+    uniqueOUT.resize(graph.get()->getNoLabels());
 }
 
 void SimpleEstimator::prepare() {
@@ -27,11 +30,24 @@ void SimpleEstimator::prepare() {
         for (auto labelTarget : graph->adj[source]) {
             auto label = labelTarget.first;
             auto target = labelTarget.second;
+            tabels[label].emplace_back(std::make_tuple(source, target));
             array[label] +=1;
+            if(!(std::find(std::begin(uniqueIN[label]), std::end(uniqueIN[label]), source) != std::end(uniqueIN[label]))) {
+                uniqueIN[label].push_back(source);
+            }
+            if(!(std::find(std::begin(uniqueOUT[label]), std::end(uniqueOUT[label]), target) != std::end(uniqueOUT[label]))) {
+                uniqueOUT[label].push_back(target);
+            }
         }
     }
 
     std::cout << array[0] << " " << array[1] << " " << array[2] << " " << array[3] << "\n";
+    std::cout << "HERE: " << uniqueIN[0].size() << " " << uniqueOUT[0].size();
+    std::cout << "HERE: " << uniqueIN[1].size() << " " << uniqueOUT[1].size();
+    std::cout << "HERE: " << uniqueIN[2].size() << " " << uniqueOUT[2].size();
+    std::cout << "HERE: " << uniqueIN[3].size() << " " << uniqueOUT[3].size();
+
+
 
     // For each node count the number of outgoing and incoming edges
     for(int source = 0; source < graph->getNoVertices(); source++) {
@@ -58,10 +74,10 @@ int SimpleEstimator::estimatePath(RPQTree *q , int level) {
         std::smatch matches;
         if(std::regex_search(q->data, matches, directLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            return array[label] + int((pow(array[label], array[label] / graph.get()->getNoEdges()) * level));
+            return array[label];
         } else if(std::regex_search(q->data, matches, inverseLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            return array[label] + int((pow(array[label], array[label] / graph.get()->getNoEdges()) * level));
+            return array[label];
         } else {
             std::cerr << "Label parsing failed!" << std::endl;
             return 0;
@@ -115,6 +131,6 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
     noOut = graph.get()->getNoEdges()/graph.get()->getNoLabels();
     noIn = graph.get()->getNoEdges()/graph.get()->getNoLabels();
-    noPaths = uint32_t(estimatePath(q, 0));
-    return cardStat {noOut,a,noIn};
+    noPaths = uint32_t(estimatePath(q, 1));
+    return cardStat {noOut,noPaths,noIn};
 }

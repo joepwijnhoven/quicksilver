@@ -16,7 +16,9 @@ class SimpleEstimator : public Estimator {
     std::vector<uint32_t> nr_edges_out;
     std::vector<uint32_t> nr_label_occurences;
     std::vector<uint32_t> array;
-
+    std::vector<std::vector<std::tuple<int, int>>> tabels;
+    std::vector<std::vector<uint32_t>>  uniqueIN;
+    std::vector<std::vector<uint32_t>>  uniqueOUT;
 
 public:
     explicit SimpleEstimator(std::shared_ptr<SimpleGraph> &g);
