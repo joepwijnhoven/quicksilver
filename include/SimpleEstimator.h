@@ -15,6 +15,7 @@ class SimpleEstimator : public Estimator {
     std::vector<uint32_t> nr_edges_in;
     std::vector<uint32_t> nr_edges_out;
     std::vector<uint32_t> nr_label_occurences;
+    std::vector<uint32_t> array;
 
 
 public:
@@ -22,6 +23,7 @@ public:
     ~SimpleEstimator() = default;
 
     void prepare() override ;
+    int estimatePath(RPQTree *q, int level);
     cardStat estimate(RPQTree *q) override ;
 
 };

@@ -5,6 +5,7 @@
 #include "SimpleGraph.h"
 #include "SimpleEstimator.h"
 #include <string>
+#include <math.h>
 
 SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
 
@@ -13,17 +14,29 @@ SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
     nr_edges_in.resize(graph.get()->getNoVertices());
     nr_edges_out.resize(graph.get()->getNoVertices());
     nr_label_occurences.resize(graph.get()->getNoLabels());
-
-
+    array.resize(graph.get()->getNoLabels());
 }
 
 void SimpleEstimator::prepare() {
-    // do your prep here
+
+    for(int k =0; k< array.size(); k++){
+        array[k] = 0;
+    }
+
+    for(uint32_t source = 0; source < graph->getNoVertices(); source++) {
+        for (auto labelTarget : graph->adj[source]) {
+            auto label = labelTarget.first;
+            auto target = labelTarget.second;
+            array[label] +=1;
+        }
+    }
+
+    std::cout << array[0] << " " << array[1] << " " << array[2] << " " << array[3] << "\n";
 
     // For each node count the number of outgoing and incoming edges
     for(int source = 0; source < graph->getNoVertices(); source++) {
         nr_edges_out[source] = graph->adj[source].size();
-        std::cout << "size of: " << source << " number edges: " << nr_edges_out[source] << "\n";
+        std::cout << "size of: " << graph->adj[source].data() << " number edges: " << nr_edges_out[source] << "\n";
     }
 
     for(int target = 0; target < graph->getNoVertices(); target++) {
@@ -38,9 +51,33 @@ void SimpleEstimator::prepare() {
 
 }
 
+int SimpleEstimator::estimatePath(RPQTree *q , int level) {
+    if(q->isLeaf()){
+        std::regex directLabel (R"((\d+)\+)");
+        std::regex inverseLabel (R"((\d+)\-)");
+        std::smatch matches;
+        if(std::regex_search(q->data, matches, directLabel)) {
+            auto label = (uint32_t) std::stoul(matches[1]);
+            return array[label] + int((pow(array[label], array[label] / graph.get()->getNoEdges()) * level));
+        } else if(std::regex_search(q->data, matches, inverseLabel)) {
+            auto label = (uint32_t) std::stoul(matches[1]);
+            return array[label] + int((pow(array[label], array[label] / graph.get()->getNoEdges()) * level));
+        } else {
+            std::cerr << "Label parsing failed!" << std::endl;
+            return 0;
+        }
+    }
+    if(q->isConcat()) {
+        float nr_edges_per_vertices = float(graph.get()->getNoEdges()) / float(graph.get()->getNoVertices());
+        auto left = estimatePath(q->left, level++);
+        auto right = estimatePath(q->right, level++);
+        return left+right;
+    }
+    return 0;
+}
+
 cardStat SimpleEstimator::estimate(RPQTree *q) {
     // perform your estimation here
-
     // variables to be returned later
     uint32_t noIn;
     uint32_t noOut;
@@ -52,7 +89,7 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
     RPQTree *q_in = q;
     RPQTree *q_out = q;
     // retrieve the begin of the query
-    while (q_in->isConcat() == 1) {
+    while (q_in->isConcat()) {
          q_in = q_in->left;
     }
     // get the int value of the node and the direction, direction not needed yet.
@@ -78,7 +115,6 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
     noOut = graph.get()->getNoEdges()/graph.get()->getNoLabels();
     noIn = graph.get()->getNoEdges()/graph.get()->getNoLabels();
-    noPaths = graph.get()->getNoVertices()/graph.get()->getNoLabels();
-
-    return cardStat {noOut,noPaths,noIn};
+    noPaths = uint32_t(estimatePath(q, 0));
+    return cardStat {noOut,a,noIn};
 }
