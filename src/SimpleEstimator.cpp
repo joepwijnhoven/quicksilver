@@ -6,6 +6,7 @@
 #include "SimpleEstimator.h"
 #include <string>
 #include <math.h>
+#include <w32api/ntdef.h>
 
 SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
 
@@ -67,29 +68,32 @@ void SimpleEstimator::prepare() {
 
 }
 
-int SimpleEstimator::estimatePath(RPQTree *q , int level) {
+std::vector<int> SimpleEstimator::estimatePath(RPQTree *q) {
     if(q->isLeaf()){
         std::regex directLabel (R"((\d+)\+)");
         std::regex inverseLabel (R"((\d+)\-)");
         std::smatch matches;
         if(std::regex_search(q->data, matches, directLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            return array[label];
+            std::vector<int> test {static_cast<int>(uniqueIN[label].size()), static_cast<int>(uniqueOUT[label].size()), array[label]};
+            return test;
         } else if(std::regex_search(q->data, matches, inverseLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            return array[label];
+            std::vector<int> test {static_cast<int>(uniqueIN[label].size()), static_cast<int>(uniqueOUT[label].size()), array[label]};
+            return test;
         } else {
             std::cerr << "Label parsing failed!" << std::endl;
-            return 0;
+            std::vector<int> test;
+            return test;
         }
     }
     if(q->isConcat()) {
-        float nr_edges_per_vertices = float(graph.get()->getNoEdges()) / float(graph.get()->getNoVertices());
-        auto left = estimatePath(q->left, level++);
-        auto right = estimatePath(q->right, level++);
-        return left+right;
+        auto left = estimatePath(q->left);
+        auto right = estimatePath(q->right);
+        std::vector<int> test {max(left[1],right[0]), max(left[1],right[0]), (int) min((left[2] * (((double)right[2])/((double)right[0]))), right[2] * ((double)left[2]/(double)left[1]))};
+        return test;
     }
-    return 0;
+    return {};
 }
 
 cardStat SimpleEstimator::estimate(RPQTree *q) {
@@ -131,6 +135,6 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
     noOut = graph.get()->getNoEdges()/graph.get()->getNoLabels();
     noIn = graph.get()->getNoEdges()/graph.get()->getNoLabels();
-    noPaths = uint32_t(estimatePath(q, 1));
+    noPaths = uint32_t(estimatePath(q)[2]);
     return cardStat {noOut,noPaths,noIn};
 }

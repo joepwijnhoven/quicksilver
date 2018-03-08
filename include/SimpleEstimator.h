@@ -25,7 +25,7 @@ public:
     ~SimpleEstimator() = default;
 
     void prepare() override ;
-    int estimatePath(RPQTree *q, int level);
+    std::vector<int> estimatePath(RPQTree *q);
     cardStat estimate(RPQTree *q) override ;
 
 };
