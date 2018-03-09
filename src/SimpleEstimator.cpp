@@ -79,7 +79,7 @@ std::vector<int> SimpleEstimator::estimatePath(RPQTree *q) {
             return test;
         } else if(std::regex_search(q->data, matches, inverseLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            std::vector<int> test {static_cast<int>(uniqueIN[label].size()), static_cast<int>(uniqueOUT[label].size()), array[label]};
+            std::vector<int> test {static_cast<int>(uniqueOUT[label].size()), static_cast<int>(uniqueIN[label].size()), array[label]};
             return test;
         } else {
             std::cerr << "Label parsing failed!" << std::endl;
@@ -90,7 +90,7 @@ std::vector<int> SimpleEstimator::estimatePath(RPQTree *q) {
     if(q->isConcat()) {
         auto left = estimatePath(q->left);
         auto right = estimatePath(q->right);
-        std::vector<int> test {max(left[1],right[0]), max(left[1],right[0]), (int) min((left[2] * (((double)right[2])/((double)right[0]))), right[2] * ((double)left[2]/(double)left[1]))};
+        std::vector<int> test {left[0], right[1], (int) min((left[2] * (((double)right[2])/((double)right[0]))), right[2] * ((double)left[2]/(double)left[1]))};
         return test;
     }
     return {};
@@ -135,6 +135,7 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 
     noOut = graph.get()->getNoEdges()/graph.get()->getNoLabels();
     noIn = graph.get()->getNoEdges()/graph.get()->getNoLabels();
-    noPaths = uint32_t(estimatePath(q)[2]);
-    return cardStat {noOut,noPaths,noIn};
+    std::vector<int> testvar = estimatePath(q);
+    //noPaths = uint32_t(estimatePath(q)[2]);
+    return cardStat {testvar[0],testvar[2],testvar[1]};
 }
