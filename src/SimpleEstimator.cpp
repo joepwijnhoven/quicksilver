@@ -19,9 +19,20 @@ SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
     tabels.resize(graph.get()->getNoLabels());
     uniqueIN.resize(graph.get()->getNoLabels());
     uniqueOUT.resize(graph.get()->getNoLabels());
+    AttributeCountIN.resize(graph.get()->getNoLabels());
+    AttributeCountOUT.resize(graph.get()->getNoLabels());
+    thresholdsIN.resize(graph.get()->getNoLabels());
+    thresholdsOUT.resize(graph.get()->getNoLabels());
+    sampleSize = ((graph.get()->getNoEdges() * 2) / graph->getNoLabels()) / 20;
 }
 
 void SimpleEstimator::prepare() {
+
+    for(int i = 0; i < graph.get()->getNoLabels(); i++) {
+        AttributeCountIN[i].resize(graph.get()->getNoVertices());
+        AttributeCountOUT[i].resize(graph.get()->getNoVertices());
+    }
+
 
     for(int k =0; k< array.size(); k++){
         array[k] = 0;
@@ -33,6 +44,8 @@ void SimpleEstimator::prepare() {
             auto target = labelTarget.second;
             tabels[label].emplace_back(std::make_tuple(source, target));
             array[label] +=1;
+            AttributeCountIN[label][source] +=1;
+            AttributeCountOUT[label][target] +=1;
             if(!(std::find(std::begin(uniqueIN[label]), std::end(uniqueIN[label]), source) != std::end(uniqueIN[label]))) {
                 uniqueIN[label].push_back(source);
             }
@@ -42,11 +55,54 @@ void SimpleEstimator::prepare() {
         }
     }
 
-    std::cout << array[0] << " " << array[1] << " " << array[8] << " " << array[9] << "\n";
-    std::cout << "HERE: " << uniqueIN[0].size() << " " << uniqueOUT[0].size();
-    std::cout << "HERE: " << uniqueIN[1].size() << " " << uniqueOUT[1].size();
-    std::cout << "HERE: " << uniqueIN[8].size() << " " << uniqueOUT[8].size();
-    std::cout << "HERE: " << uniqueIN[9].size() << " " << uniqueOUT[9].size();
+    // find thresholds for in
+    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
+        int threshold = 1;
+        double count = graph.get()->getNoVertices();
+        // if the unique number of nodes is smaller then sample size we add them all.
+        if (uniqueIN[label].size() <= sampleSize) {
+            thresholdsIN[label] = 1;
+        } else {
+            while(count >= sampleSize) {
+                count = 0;
+                for(int i = 0; i < uniqueIN.size(); i++) {
+                    if (AttributeCountIN[label][uniqueIN[label][i]] > threshold) {
+                        count++;
+                    } else {
+                        count += (double)(AttributeCountIN[label][uniqueIN[label][i]] / threshold);
+                    }
+                }
+                threshold++;
+                std::cout << "threshold: " << threshold;
+            }
+            thresholdsIN[label] = threshold - 1;
+        }
+
+    }
+
+//    // find thresholds for out
+//    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
+//        int threshold = 1;
+//        double count = graph.get()->getNoVertices();
+//        while(count >= sampleSize) {
+//            for(int i = 0; i < uniqueIN.size(); i++) {
+//                count = 0;
+//                if (AttributeCountOUT[label][uniqueOUT[label][i]] > threshold) {
+//                    count++;
+//                } else {
+//                    count += AttributeCountOUT[label][uniqueOUT[label][i]] / threshold;
+//                }
+//            }
+//            threshold++;
+//        }
+//        thresholdsOUT[label] = threshold - 1;
+//    }
+
+    std::cout << array[17] << " " << array[1] << " " << array[8] << " " << array[9] << "\n";
+    std::cout << "HERE: " << uniqueIN[17].size() << " " << uniqueOUT[17].size() << " " << thresholdsIN[17] << " " << thresholdsOUT[17] << "\n";
+    std::cout << "HERE: " << uniqueIN[1].size() << " " << uniqueOUT[1].size() << " " << thresholdsIN[1] << " " << thresholdsOUT[1] << "\n";
+    std::cout << "HERE: " << uniqueIN[8].size() << " " << uniqueOUT[8].size() << " " << thresholdsIN[8] << " " << thresholdsOUT[8] << "\n";
+    std::cout << "HERE: " << uniqueIN[9].size() << " " << uniqueOUT[9].size() << " " << thresholdsIN[9] << " " << thresholdsOUT[9] << "\n";
 
 
 
@@ -91,7 +147,7 @@ std::vector<int> SimpleEstimator::estimatePath(RPQTree *q) {
         auto left = estimatePath(q->left);
         auto right = estimatePath(q->right);
         std::vector<int> test {left[0], right[1], (int) min((left[2] * (((double)right[2])/((double)right[0]))), right[2] * ((double)left[2]/(double)left[1]))};
-        std::cout << "HERE test 2: " << test[2];
+        //std::cout << "HERE test 2: " << test[2];
         return test;
     }
     return {};
@@ -137,6 +193,8 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 //    noOut = graph.get()->getNoEdges()/graph.get()->getNoLabels();
 //    noIn = graph.get()->getNoEdges()/graph.get()->getNoLabels();
     std::vector<int> testvar = estimatePath(q);
+    testvar[0] = min(testvar[0], testvar[2]);
+    testvar[1] = min(testvar[1], testvar[2]);
     //noPaths = uint32_t(estimatePath(q)[2]);
     return cardStat {testvar[0],testvar[2],testvar[1]};
 }

@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Time to read the graph into memory: " << std::chrono::duration<double, std::milli>(end - start).count() << " ms" << std::endl;
 
     // prepare the estimator
+
     auto est = std::make_unique<SimpleEstimator>(g);
     start = std::chrono::steady_clock::now();
     est->prepare();
