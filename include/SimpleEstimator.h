@@ -24,6 +24,8 @@ class SimpleEstimator : public Estimator {
     std::vector<std::vector<uint32_t>>  AttributeCountOUT;
     std::vector<uint32_t> thresholdsIN;
     std::vector<uint32_t> thresholdsOUT;
+    std::vector<int> joinAttributes;
+
 
 
 

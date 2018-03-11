@@ -6,7 +6,8 @@
 #include "SimpleEstimator.h"
 #include <string>
 #include <math.h>
-#include <w32api/ntdef.h>
+#include <iomanip>
+#include <algorithm>
 
 SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
 
@@ -23,15 +24,15 @@ SimpleEstimator::SimpleEstimator(std::shared_ptr<SimpleGraph> &g){
     AttributeCountOUT.resize(graph.get()->getNoLabels());
     thresholdsIN.resize(graph.get()->getNoLabels());
     thresholdsOUT.resize(graph.get()->getNoLabels());
-    sampleSize = ((graph.get()->getNoEdges() * 2) / graph->getNoLabels()) / 20;
+    sampleSize = ((graph.get()->getNoEdges() * 2) / graph->getNoLabels()) / 5;
 }
 
 void SimpleEstimator::prepare() {
 
-    for(int i = 0; i < graph.get()->getNoLabels(); i++) {
-        AttributeCountIN[i].resize(graph.get()->getNoVertices());
-        AttributeCountOUT[i].resize(graph.get()->getNoVertices());
-    }
+//    for(int i = 0; i < graph.get()->getNoLabels(); i++) {
+//        AttributeCountIN[i].resize(graph.get()->getNoVertices());
+//        AttributeCountOUT[i].resize(graph.get()->getNoVertices());
+//    }
 
 
     for(int k =0; k< array.size(); k++){
@@ -44,8 +45,8 @@ void SimpleEstimator::prepare() {
             auto target = labelTarget.second;
             tabels[label].emplace_back(std::make_tuple(source, target));
             array[label] +=1;
-            AttributeCountIN[label][source] +=1;
-            AttributeCountOUT[label][target] +=1;
+            //AttributeCountIN[label][source] +=1;
+            //AttributeCountOUT[label][target] +=1;
             if(!(std::find(std::begin(uniqueIN[label]), std::end(uniqueIN[label]), source) != std::end(uniqueIN[label]))) {
                 uniqueIN[label].push_back(source);
             }
@@ -55,7 +56,13 @@ void SimpleEstimator::prepare() {
         }
     }
 
-    // find thresholds for in
+//    // sort our unique nodes per label so we can merge later
+//    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
+//        std::sort(uniqueIN[label].begin(), uniqueIN[label].end());
+//        std::sort(uniqueOUT[label].begin(), uniqueOUT[label].end());
+//    }
+
+    //find thresholds for in
 //    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
 //        int threshold = 1;
 //        double count = graph.get()->getNoVertices();
@@ -65,77 +72,76 @@ void SimpleEstimator::prepare() {
 //        } else {
 //            while(count >= sampleSize) {
 //                count = 0;
-//                for(int i = 0; i < uniqueIN.size(); i++) {
+//                //std::cout << "count1: " << count << "\n";
+//                for(int i = 0; i < uniqueIN[label].size(); i++) {
 //                    if (AttributeCountIN[label][uniqueIN[label][i]] > threshold) {
 //                        count++;
+//                        //std::cout << "count2: " << count << "\n";
 //                    } else {
-//                        count += (double)(AttributeCountIN[label][uniqueIN[label][i]] / threshold);
+//                        count += ((double)AttributeCountIN[label][uniqueIN[label][i]] / (double)threshold);
+//                        //std::cout << "count3: " << std::setprecision (17) << count << "\n";
 //                    }
 //                }
 //                threshold++;
-//                std::cout << "threshold: " << threshold;
+//                //std::cout << "threshold: " << threshold << "\n";
+//                //std::cout << "count4: " << count << "\n";
+//
 //            }
 //            thresholdsIN[label] = threshold - 1;
 //        }
-//
+//        //std::cout << "label" << label << "\n";
 //    }
 
-//    // find thresholds for out
+     //find thresholds for out
 //    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
 //        int threshold = 1;
 //        double count = graph.get()->getNoVertices();
-//        while(count >= sampleSize) {
-//            for(int i = 0; i < uniqueIN.size(); i++) {
+//        // if the unique number of nodes is smaller then sample size we add them all.
+//        if (uniqueOUT[label].size() <= sampleSize) {
+//            thresholdsOUT[label] = 1;
+//        } else {
+//            while(count >= sampleSize) {
 //                count = 0;
-//                if (AttributeCountOUT[label][uniqueOUT[label][i]] > threshold) {
-//                    count++;
-//                } else {
-//                    count += AttributeCountOUT[label][uniqueOUT[label][i]] / threshold;
+//                //std::cout << "count1: " << count << "\n";
+//                for(int i = 0; i < uniqueOUT[label].size(); i++) {
+//                    if (AttributeCountOUT[label][uniqueOUT[label][i]] > threshold) {
+//                        count++;
+//                        //std::cout << "count2: " << count << "\n";
+//                    } else {
+//                        count += ((double)AttributeCountOUT[label][uniqueOUT[label][i]] / (double)threshold);
+//                        //std::cout << "count3: " << std::setprecision (17) << count << "\n";
+//                    }
 //                }
-//            }
-//            threshold++;
-//        }
-//        thresholdsOUT[label] = threshold - 1;
-//    }
-
-    std::cout << array[17] << " " << array[1] << " " << array[8] << " " << array[9] << "\n";
-    std::cout << "HERE: " << uniqueIN[17].size() << " " << uniqueOUT[17].size() << " " << thresholdsIN[17] << " " << thresholdsOUT[17] << "\n";
-    std::cout << "HERE: " << uniqueIN[1].size() << " " << uniqueOUT[1].size() << " " << thresholdsIN[1] << " " << thresholdsOUT[1] << "\n";
-    std::cout << "HERE: " << uniqueIN[8].size() << " " << uniqueOUT[8].size() << " " << thresholdsIN[8] << " " << thresholdsOUT[8] << "\n";
-    std::cout << "HERE: " << uniqueIN[9].size() << " " << uniqueOUT[9].size() << " " << thresholdsIN[9] << " " << thresholdsOUT[9] << "\n";
-
-
-
-    // For each node count the number of outgoing and incoming edges
-//    for(int source = 0; source < graph->getNoVertices(); source++) {
-//        nr_edges_out[source] = graph->adj[source].size();
-//        std::cout << "size of: " << graph->adj[source].data() << " number edges: " << nr_edges_out[source] << "\n";
-//    }
+//                threshold++;
+//                //std::cout << "threshold: " << threshold << "\n";
+//                //std::cout << "count4: " << count << "\n";
 //
-//    for(int target = 0; target < graph->getNoVertices(); target++) {
-//        nr_edges_in[target] = graph->reverse_adj[target].size();
+//            }
+//            thresholdsOUT[label] = threshold - 1;
+//        }
+//        //std::cout << "label" << label << "\n";
 //    }
 
-//    //for each unique label count the number of occurences
-//    for(int label = 0; label < graph->getNoLabels(); label++) {
-//        nr_label_occurences[label] =
-//    }
-
+//    std::cout << array[17] << " " << array[1] << " " << array[8] << " " << array[9] << "\n";
+//    std::cout << "HERE: " << uniqueIN[17].size() << " " << uniqueOUT[17].size() << " " << thresholdsIN[17] << " " << thresholdsOUT[17] << "\n";
+//    std::cout << "HERE: " << uniqueIN[1].size() << " " << uniqueOUT[1].size() << " " << thresholdsIN[1] << " " << thresholdsOUT[1] << "\n";
+//    std::cout << "HERE: " << uniqueIN[8].size() << " " << uniqueOUT[8].size() << " " << thresholdsIN[8] << " " << thresholdsOUT[8] << "\n";
+//    std::cout << "HERE: " << uniqueIN[9].size() << " " << uniqueOUT[9].size() << " " << thresholdsIN[9] << " " << thresholdsOUT[9] << "\n";
 
 }
 
 std::vector<int> SimpleEstimator::estimatePath(RPQTree *q) {
     if(q->isLeaf()){
+        std::smatch matches;
         std::regex directLabel (R"((\d+)\+)");
         std::regex inverseLabel (R"((\d+)\-)");
-        std::smatch matches;
         if(std::regex_search(q->data, matches, directLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            std::vector<int> test {static_cast<int>(uniqueIN[label].size()), static_cast<int>(uniqueOUT[label].size()), array[label]};
+            std::vector<int> test {static_cast<int>(uniqueIN[label].size()), static_cast<int>(uniqueOUT[label].size()), array[label], label, 1};
             return test;
         } else if(std::regex_search(q->data, matches, inverseLabel)) {
             auto label = (uint32_t) std::stoul(matches[1]);
-            std::vector<int> test {static_cast<int>(uniqueOUT[label].size()), static_cast<int>(uniqueIN[label].size()), array[label]};
+            std::vector<int> test {static_cast<int>(uniqueOUT[label].size()), static_cast<int>(uniqueIN[label].size()), array[label], label, 0};
             return test;
         } else {
             std::cerr << "Label parsing failed!" << std::endl;
@@ -146,7 +152,95 @@ std::vector<int> SimpleEstimator::estimatePath(RPQTree *q) {
     if(q->isConcat()) {
         auto left = estimatePath(q->left);
         auto right = estimatePath(q->right);
-        std::vector<int> test {left[0], right[1], (int) min((left[2] * (((double)right[2])/((double)right[0]))), right[2] * ((double)left[2]/(double)left[1]))};
+        // join estimate from slides
+        std::vector<int> test {left[0], right[1], (int) std::min((left[2] * (((double)right[2])/((double)right[0]))), right[2] * ((double)left[2]/(double)left[1]))};
+        // join estimate from end biased samples for join cardinality estimation
+//        int S;
+//        // merge on the attribute
+//        // both go forwards
+//        if(left[4] == 1 && right[4] == 1) {
+//            joinAttributes.resize(uniqueOUT[left[3]].size()+uniqueIN[right[3]].size());
+//            std::vector<int>::iterator it;
+//            it = std::set_union(uniqueOUT[left[3]].begin(), uniqueOUT[left[3]].end(), uniqueIN[right[3]].begin(), uniqueIN[right[3]].end(), joinAttributes.begin());
+//            joinAttributes.resize(it-joinAttributes.begin());
+//        } else if (left[4] == 1 && right[4] == 0) {
+//            joinAttributes.resize(uniqueOUT[left[3]].size()+uniqueOUT[right[3]].size());
+//            std::vector<int>::iterator it;
+//            it = std::set_union(uniqueOUT[left[3]].begin(), uniqueOUT[left[3]].end(), uniqueOUT[right[3]].begin(), uniqueOUT[right[3]].end(), joinAttributes.begin());
+//            joinAttributes.resize(it-joinAttributes.begin());
+//        } else if (left[4] == 0 && right[4] == 1) {
+//            joinAttributes.resize(uniqueIN[left[3]].size()+uniqueIN[right[3]].size());
+//            std::vector<int>::iterator it;
+//            it = std::set_union(uniqueIN[left[3]].begin(), uniqueIN[left[3]].end(), uniqueIN[right[3]].begin(), uniqueIN[right[3]].end(), joinAttributes.begin());
+//            joinAttributes.resize(it-joinAttributes.begin());
+//        } else if (left[4] == 0 && right[4] == 0) {
+//            joinAttributes.resize(uniqueIN[left[3]].size()+uniqueOUT[right[3]].size());
+//            std::vector<int>::iterator it;
+//            it = std::set_union(uniqueIN[left[3]].begin(), uniqueIN[left[3]].end(), uniqueOUT[right[3]].begin(), uniqueOUT[right[3]].end(), joinAttributes.begin());
+//            joinAttributes.resize(it-joinAttributes.begin());
+//        }
+//        // all unique values in the joined attribute.
+//        for (int i = 0; i < joinAttributes.size(); i++) {
+//            if(left[4] == 1 && right[4] == 1) {
+//                int T_a = thresholdsOUT[left[3]];
+//                int T_b = thresholdsIN[right[3]];
+//                int A_v = AttributeCountOUT[left[3]][joinAttributes[i]];
+//                int B_v = AttributeCountIN[right[3]][joinAttributes[i]];
+//                if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v*B_v);
+//                } else if (A_v < T_a && B_v >= T_b) {
+//                    S += (T_a * B_v);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * T_b);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * B_v * std::max(T_a/A_v, T_b/B_v));
+//                }
+//            } else if (left[4] == 1 && right[4] == 0) {
+//                int T_a = thresholdsOUT[left[3]];
+//                int T_b = thresholdsOUT[right[3]];
+//                int A_v = AttributeCountOUT[left[3]][joinAttributes[i]];
+//                int B_v = AttributeCountOUT[right[3]][joinAttributes[i]];
+//                if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v*B_v);
+//                } else if (A_v < T_a && B_v >= T_b) {
+//                    S += (T_a * B_v);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * T_b);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * B_v * std::max(T_a/A_v, T_b/B_v));
+//                }
+//            } else if (left[4] == 0 && right[4] == 1) {
+//                int T_a = thresholdsIN[left[3]];
+//                int T_b = thresholdsIN[right[3]];
+//                int A_v = AttributeCountIN[left[3]][joinAttributes[i]];
+//                int B_v = AttributeCountIN[right[3]][joinAttributes[i]];
+//                if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v*B_v);
+//                } else if (A_v < T_a && B_v >= T_b) {
+//                    S += (T_a * B_v);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * T_b);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * B_v * std::max(T_a/A_v, T_b/B_v));
+//                }
+//            } else if (left[4] == 0 && right[4] == 0) {
+//                int T_a = thresholdsIN[left[3]];
+//                int T_b = thresholdsOUT[right[3]];
+//                int A_v = AttributeCountIN[left[3]][joinAttributes[i]];
+//                int B_v = AttributeCountOUT[right[3]][joinAttributes[i]];
+//                if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v*B_v);
+//                } else if (A_v < T_a && B_v >= T_b) {
+//                    S += (T_a * B_v);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * T_b);
+//                } else if (A_v >= T_a && B_v >= T_b) {
+//                    S += (A_v * B_v * std::max(T_a/A_v, T_b/B_v));
+//                }
+//            }
+//        }
+//        std::vector<int> test {left[0], right[1], S};
+
         //std::cout << "HERE test 2: " << test[2];
         return test;
     }
@@ -193,8 +287,7 @@ cardStat SimpleEstimator::estimate(RPQTree *q) {
 //    noOut = graph.get()->getNoEdges()/graph.get()->getNoLabels();
 //    noIn = graph.get()->getNoEdges()/graph.get()->getNoLabels();
     std::vector<int> testvar = estimatePath(q);
-    testvar[0] = min(testvar[0], testvar[2]);
-    testvar[1] = min(testvar[1], testvar[2]);
-    //noPaths = uint32_t(estimatePath(q)[2]);
+    testvar[0] = std::min(testvar[0], testvar[2]);
+    testvar[1] = std::min(testvar[1], testvar[2]);
     return cardStat {testvar[0],testvar[2],testvar[1]};
 }
