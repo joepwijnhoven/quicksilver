@@ -56,29 +56,29 @@ void SimpleEstimator::prepare() {
     }
 
     // find thresholds for in
-    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
-        int threshold = 1;
-        double count = graph.get()->getNoVertices();
-        // if the unique number of nodes is smaller then sample size we add them all.
-        if (uniqueIN[label].size() <= sampleSize) {
-            thresholdsIN[label] = 1;
-        } else {
-            while(count >= sampleSize) {
-                count = 0;
-                for(int i = 0; i < uniqueIN.size(); i++) {
-                    if (AttributeCountIN[label][uniqueIN[label][i]] > threshold) {
-                        count++;
-                    } else {
-                        count += (double)(AttributeCountIN[label][uniqueIN[label][i]] / threshold);
-                    }
-                }
-                threshold++;
-                std::cout << "threshold: " << threshold;
-            }
-            thresholdsIN[label] = threshold - 1;
-        }
-
-    }
+//    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
+//        int threshold = 1;
+//        double count = graph.get()->getNoVertices();
+//        // if the unique number of nodes is smaller then sample size we add them all.
+//        if (uniqueIN[label].size() <= sampleSize) {
+//            thresholdsIN[label] = 1;
+//        } else {
+//            while(count >= sampleSize) {
+//                count = 0;
+//                for(int i = 0; i < uniqueIN.size(); i++) {
+//                    if (AttributeCountIN[label][uniqueIN[label][i]] > threshold) {
+//                        count++;
+//                    } else {
+//                        count += (double)(AttributeCountIN[label][uniqueIN[label][i]] / threshold);
+//                    }
+//                }
+//                threshold++;
+//                std::cout << "threshold: " << threshold;
+//            }
+//            thresholdsIN[label] = threshold - 1;
+//        }
+//
+//    }
 
 //    // find thresholds for out
 //    for (int label = 0; label < graph.get()->getNoLabels(); label++) {
